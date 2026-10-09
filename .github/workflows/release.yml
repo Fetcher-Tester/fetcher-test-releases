@@ -1,0 +1,26 @@
+name: release
+on:
+  workflow_dispatch:
+    inputs:
+      attest:
+        type: boolean
+        default: true
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "fetcher test artifact ${{ github.run_id }}" > artifact.txt
+      - if: inputs.attest
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: artifact.txt
+      - run: |
+          tag="v0.1.${{ github.run_number }}"
+          gh release create "$tag" artifact.txt --draft --title "$tag" --notes "Paramify fetcher test fixture."             --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA"
+          gh release edit "$tag" --draft=false --repo "$GITHUB_REPOSITORY"
+        env:
+          GH_TOKEN: ${{ github.token }}
